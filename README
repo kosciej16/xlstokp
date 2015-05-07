@@ -1,0 +1,10 @@
+SETUP AND RUN
+
+You need unoconv to run script.
+Type sudo apt-get install unoconv
+
+Script need config file (look example.cfg)
+
+To run, type:
+
+./run.sh <xls file> <config file = example.cfg>

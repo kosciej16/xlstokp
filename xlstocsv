@@ -1,0 +1,10 @@
+#!/bin/bash
+
+config=""
+
+if [ $# -lt 1 ] || [ ! -f "$1" ] ; then
+    echo "No such xls file"
+    exit
+fi
+
+unoconv -f csv -o "${1/xls/csv}" "$1"

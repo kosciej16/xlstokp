@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [ $# -lt 1 ] || [ ! -f "$1" ] ; then
+    echo "Usage: ./csvtokp csv_file [config_file]"
+elif [ $# -lt 2 ] ; then
+    echo "No config file provided, using example.cfg"
+    config="example.cfg"
+else
+    config=$2
+fi
+
+sed -i 's/Ł/L/g; s/ł/l/g' "$1"
+python som.py "$1" "$config"
