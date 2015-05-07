@@ -83,7 +83,11 @@ def create_kp_event(row):
     time = extract_time(row)
     person = extract_person(row)
     description = extract_description(row)
-    return '\n\n' + date + ' -- ' + time + 'h -- ' + person + '\n' + description
+    return '\n\n' + date + ' -- ' + round_time(time) + 'h -- ' + person + '\n' + description
+
+def round_time(time):
+    f = float(time.replace(',','.'))
+    return str(round(f, 2)).replace('.',',')
 
 def create_or_get_file(row):
     name = extract_name(row)
