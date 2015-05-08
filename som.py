@@ -8,11 +8,15 @@ import sys
 import time
 
 
-included_cols={}
-mapped_cols={}
+included_cols = {}
+mapped_cols = {}
 config = ConfigParser.RawConfigParser()
 col_names = []
 files = {}
+ommited_rows = []
+
+PERSON_NOT_FOUND = 1
+PROJECT_NOT_FOUND = 2
 
 def strip_accents(s):
        return ''.join(c for c in unicodedata.normalize('NFD', s)
@@ -33,14 +37,24 @@ def get_cols(col_names):
 def filter(row):
     pr = config.items('Project')
     pe = config.items('Person')
-    b = False
+    person_found = False
+    project_found = False
+    
     for (k, _) in pe:
         if k in row:
-            b = True
+            person_found = True
     for (k, _) in pr:
         if k in row:
-            return b
-    return False
+            project_found = True
+
+    flag = 0
+    if not person_found:
+        flag |= PERSON_NOT_FOUND
+    if not project_found:
+        flag |= PROJECT_NOT_FOUND
+    if flag:
+        ommited_rows.append((row, flag))
+    return person_found and project_found
 
 def map(content):
     new_content = []
@@ -58,6 +72,8 @@ def extract_date(row, fmt='%d.%m.%Y', col_name='date'):
 
 def extract_project(row, col_name='project'):
     project = row[mapped_cols[col_name]]
+    if not config.has_option('Project', project):
+        return project
     return config.get('Project', project)
 
 def extract_time(row, col_name='time'):
@@ -68,6 +84,8 @@ def extract_description(row, col_name='description'):
 
 def extract_person(row, full_name=False, col_name='person'):
     person = row[mapped_cols[col_name]]
+    if not config.has_option('Person', person):
+        return person
     mapped_person = config.get('Person', person)
     if full_name:
         return (person, mapped_person)
@@ -131,6 +149,36 @@ def create_dirs(path=''):
         if not os.path.exists(path + k):
             os.makedirs(path + k)
 
+def print_ommited():
+    ommited_persons = {}
+    ommited_projects = []
+    for (row, flag) in ommited_rows:
+        pe = extract_person(row)
+        if flag or PERSON_NOT_FOUND:
+            if not pe in ommited_persons:
+                ommited_persons[pe] = []
+        if flag or PROJECT_NOT_FOUND:
+            pr = extract_project(row)
+            if not pr in ommited_projects:
+                ommited_projects.append(pr)
+            if not pr in ommited_persons[pe]:
+                ommited_persons[pe].append(pr)
+    print '\n\nOmmited persons:\n'
+    for pe in ommited_persons.keys():
+        print pe
+
+    print '\n\nOmmited projects:\n'
+    for pr in ommited_projects:
+        print pr
+
+    print '\n\nPerson - [Project]\n'
+    for (pe, projects) in ommited_persons.items():
+        print pe,'--> ', 
+        for pr in projects:
+            sys.stdout.write(pr)
+            sys.stdout.write(', ')
+        print
+
 def main():
     config.optionxform = str
     if not os.path.isfile(sys.argv[2]):
@@ -141,6 +189,7 @@ def main():
     create_dirs()
     #content = map(content)
     convert_to_kp(content)
+    print_ommited()
     for f in files.values():
         f.close()
 
